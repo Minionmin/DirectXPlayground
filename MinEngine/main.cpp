@@ -72,7 +72,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     {
         MessageBox(0, L"Direct3D12の初期化に失敗しました",
             L"InitD3D", MB_OK);
-        Cleanup();
         return 1;
     }
 
@@ -82,8 +81,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     WaitForPreviousFrame();
 
     CloseHandle(fenceEvent_);
-
-    Cleanup();
 
     return 0;
 }
@@ -369,8 +366,7 @@ bool InitD3D()
     // 獲得したGPUで最適なレベルをチェックして、Direct3Dデバイスの初期化
     bool bDeviceCreated = false;
     for (D3D_FEATURE_LEVEL l : levels) {
-        if (D3D12CreateDevice(tmpAdapter, l, IID_PPV_ARGS(&device_)) == S_OK) {
-            D3D_FEATURE_LEVEL featureLevel = l;
+        if (D3D12CreateDevice(tmpAdapter, l, IID_PPV_ARGS(device_.ReleaseAndGetAddressOf())) == S_OK) {
             bDeviceCreated = true;
             break;
         }
@@ -386,7 +382,7 @@ bool InitD3D()
     // ** Command AllocatorとCommand Listの生成 START
     for (unsigned int i = 0; i < frameBufferCount_; ++i)
     {
-        result = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&cmdAllocator_[i]));
+        result = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(cmdAllocator_[i].ReleaseAndGetAddressOf()));
         if (FAILED(result))
         {
             MessageBox(nullptr, L"CommandAllocatorの生成に失敗",
@@ -395,7 +391,8 @@ bool InitD3D()
         }
     }
 
-    result = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmdAllocator_[0], nullptr, IID_PPV_ARGS(&cmdList_));
+    result = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmdAllocator_[0].Get(),
+        nullptr, IID_PPV_ARGS(cmdList_.ReleaseAndGetAddressOf()));
     if (FAILED(result))
     {
         MessageBox(nullptr, L"CommandAllocatorの生成に失敗",
@@ -413,7 +410,7 @@ bool InitD3D()
     cqDesc.NodeMask = 0;
     cqDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
     cqDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-    result = device_->CreateCommandQueue(&cqDesc, IID_PPV_ARGS(&cmdQueue_));
+    result = device_->CreateCommandQueue(&cqDesc, IID_PPV_ARGS(cmdQueue_.ReleaseAndGetAddressOf()));
     if (FAILED(result))
     {
         MessageBox(nullptr, L"CommandQueueの生成に失敗",
@@ -437,12 +434,12 @@ bool InitD3D()
     swapchainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
     swapchainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
-    result = dxgiFactory_->CreateSwapChainForHwnd(cmdQueue_,
+    result = dxgiFactory_->CreateSwapChainForHwnd(cmdQueue_.Get(),
         hwnd,
         &swapchainDesc,
         nullptr,
         nullptr,
-        (IDXGISwapChain1**)&swapchain_);
+        reinterpret_cast<IDXGISwapChain1**>(swapchain_.ReleaseAndGetAddressOf()));
     if (FAILED(result))
     {
         MessageBox(nullptr, L"Swap Chainの生成に失敗",
@@ -456,7 +453,7 @@ bool InitD3D()
     heapDesc.NodeMask = 0;
     heapDesc.NumDescriptors = 2; // 表裏の２つ
     heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE; // 特に指定なし
-    result = device_->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&rtvHeaps_));
+    result = device_->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(rtvHeaps_.ReleaseAndGetAddressOf()));
 
     // RTV Descriptorの生成
     D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
@@ -470,14 +467,14 @@ bool InitD3D()
     CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvHeaps_->GetCPUDescriptorHandleForHeapStart());
     rtvDescriptorSize_ = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV); // RTVディスクリプタのサイズを取得
     for (size_t i = 0; i < frameBufferCount_; ++i) {
-        result = swapchain_->GetBuffer(static_cast<UINT>(i), IID_PPV_ARGS(&backBuffers_[i])); // Swap Chainからバックバッファを取得
+        result = swapchain_->GetBuffer(static_cast<UINT>(i), IID_PPV_ARGS(backBuffers_[i].ReleaseAndGetAddressOf())); // Swap Chainからバックバッファを取得
         if (FAILED(result))
         {
             MessageBox(nullptr, L"バックバッファの生成に失敗",
                 L"Back Buffer", MB_OK);
             return false;
         }
-        device_->CreateRenderTargetView(backBuffers_[i], &rtvDesc, rtvHandle); // Swap Chainから取得したバックバッファをRTVに変換し、RTVのDescriptor Heapに格納
+        device_->CreateRenderTargetView(backBuffers_[i].Get(), &rtvDesc, rtvHandle); // Swap Chainから取得したバックバッファをRTVに変換し、RTVのDescriptor Heapに格納
         //rtvHandle.ptr += rtvDescriptorSize_; // 次のハンドルへ移動
         rtvHandle.Offset(1, rtvDescriptorSize_);
     }
@@ -489,7 +486,7 @@ bool InitD3D()
     dsvHeapDesc.NumDescriptors = 1;
     dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
     ID3D12DescriptorHeap* dsvHeap = nullptr;
-    device_->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&dsvHeap_));
+    device_->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(dsvHeap_.ReleaseAndGetAddressOf()));
 
     // 深度バッファの生成
     D3D12_RESOURCE_DESC depthResDesc = {};
@@ -504,27 +501,30 @@ bool InitD3D()
     depthResDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
     depthResDesc.Alignment = 0;
     CD3DX12_HEAP_PROPERTIES depthHeapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+
     // クリアバリューの設定
     D3D12_CLEAR_VALUE _depthClearValue = {};
     _depthClearValue.DepthStencil.Depth = 1.0f;      //深さ１(最大値)でクリア
     _depthClearValue.Format = DXGI_FORMAT_D32_FLOAT; //32bit深度値としてクリア
+
     device_->CreateCommittedResource(
         &depthHeapProp,
         D3D12_HEAP_FLAG_NONE,
         &depthResDesc,
         D3D12_RESOURCE_STATE_DEPTH_WRITE, //デプス書き込みに使用
         &_depthClearValue,
-        IID_PPV_ARGS(&depthBuffer_));
+        IID_PPV_ARGS(depthBuffer_.ReleaseAndGetAddressOf()));
+
     // 深度バッファービュー作成
     D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
     dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
     dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
     dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
-    device_->CreateDepthStencilView(depthBuffer_, &dsvDesc, dsvHeap_->GetCPUDescriptorHandleForHeapStart());
+    device_->CreateDepthStencilView(depthBuffer_.Get(), &dsvDesc, dsvHeap_->GetCPUDescriptorHandleForHeapStart());
     // ** Depth Bufferの生成 END
 
     // ** Fenceの生成 START
-    result = device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence_));
+    result = device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence_.ReleaseAndGetAddressOf()));
     if (FAILED(result))
     {
         MessageBox(nullptr, L"フェンスの生成に失敗",
@@ -702,7 +702,7 @@ bool InitD3D()
         &vertBufferDesc,
         D3D12_RESOURCE_STATE_GENERIC_READ,
         nullptr,
-        IID_PPV_ARGS(&vertUploadHeap_)
+        IID_PPV_ARGS(vertUploadHeap_.ReleaseAndGetAddressOf())
     );
     if (FAILED(result)) {
         MessageBox(nullptr, L"頂点のヒープの生成に失敗",
@@ -718,7 +718,7 @@ bool InitD3D()
         &vertBufferDesc,
         D3D12_RESOURCE_STATE_GENERIC_READ,
         nullptr,
-        IID_PPV_ARGS(&flatVertUploadHeap_)
+        IID_PPV_ARGS(flatVertUploadHeap_.ReleaseAndGetAddressOf())
     );
     if (FAILED(result)) {
         MessageBox(nullptr, L"Flat頂点のヒープの生成に失敗",
@@ -744,7 +744,7 @@ bool InitD3D()
         &indexBufferDesc,
         D3D12_RESOURCE_STATE_GENERIC_READ,
         nullptr,
-        IID_PPV_ARGS(&indexUploadHeap_)
+        IID_PPV_ARGS(indexUploadHeap_.ReleaseAndGetAddressOf())
     );
     if (FAILED(result)) {
         MessageBox(nullptr, L"インデックスのヒープの生成に失敗",
@@ -770,7 +770,7 @@ bool InitD3D()
         &normalLineBufferDesc,
         D3D12_RESOURCE_STATE_GENERIC_READ,
         nullptr,
-        IID_PPV_ARGS(&normalUploadHeap_)
+        IID_PPV_ARGS(normalUploadHeap_.ReleaseAndGetAddressOf())
     );
     if (FAILED(result)) {
         MessageBox(nullptr, L"法線ベクトルのヒープの生成に失敗",
@@ -786,7 +786,7 @@ bool InitD3D()
         &flatNormalLineBufferDesc,
         D3D12_RESOURCE_STATE_GENERIC_READ,
         nullptr,
-        IID_PPV_ARGS(&flatNormalUploadHeap_)
+        IID_PPV_ARGS(flatNormalUploadHeap_.ReleaseAndGetAddressOf())
     );
     if (FAILED(result)) {
         MessageBox(nullptr, L"Flat Shading用法線ベクトルのヒープの生成に失敗",
@@ -870,7 +870,7 @@ bool InitD3D()
     ID3DBlob* errorBlob = nullptr;
 
     result = D3DCompileFromFile(
-        L"BasicVertexShader.hlsl",
+        L"MyHLSL/BasicVertexShader.hlsl",
         nullptr,
         D3D_COMPILE_STANDARD_FILE_INCLUDE,
         "BasicVS",
@@ -895,7 +895,7 @@ bool InitD3D()
     }
 
     result = D3DCompileFromFile(
-        L"BasicPixelShader.hlsl",
+        L"MyHLSL/BasicPixelShader.hlsl",
         nullptr,
         D3D_COMPILE_STANDARD_FILE_INCLUDE,
         "BasicPS",
@@ -924,7 +924,7 @@ bool InitD3D()
     ID3DBlob* debugPixelShaderBlob = nullptr;
 
     result = D3DCompileFromFile(
-        L"DebugVertexShader.hlsl",
+        L"MyHLSL/DebugVertexShader.hlsl",
         nullptr,
         D3D_COMPILE_STANDARD_FILE_INCLUDE,
         "DebugVS",
@@ -949,7 +949,7 @@ bool InitD3D()
     }
 
     result = D3DCompileFromFile(
-        L"DebugPixelShader.hlsl",
+        L"MyHLSL/DebugPixelShader.hlsl",
         nullptr,
         D3D_COMPILE_STANDARD_FILE_INCLUDE,
         "DebugPS",
@@ -983,7 +983,7 @@ bool InitD3D()
     basicDescHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     basicDescHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     basicDescHeapDesc.NodeMask = 0;
-    result = device_->CreateDescriptorHeap(&basicDescHeapDesc, IID_PPV_ARGS(&basicDescHeap_));
+    result = device_->CreateDescriptorHeap(&basicDescHeapDesc, IID_PPV_ARGS(basicDescHeap_.ReleaseAndGetAddressOf()));
     if (FAILED(result))
     {
         MessageBox(nullptr, L"ルートシグネチャー用のディスクリプターヒープの生成に失敗",
@@ -1041,7 +1041,8 @@ bool InitD3D()
         bRunning_ = false;
     }
 
-    result = device_->CreateRootSignature(0, rootSigBlob->GetBufferPointer(), rootSigBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
+    result = device_->CreateRootSignature(0, rootSigBlob->GetBufferPointer(), rootSigBlob->GetBufferSize(),
+        IID_PPV_ARGS(rootSignature_.ReleaseAndGetAddressOf()));
     if (FAILED(result)) {
         MessageBox(nullptr, L"Root Signatureの生成に失敗",
             L"Root Signature", MB_OK);
@@ -1051,7 +1052,7 @@ bool InitD3D()
 
     // ** グラフィックパイプラインステートのオブジェクトを生成 START
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-    psoDesc.pRootSignature = rootSignature_;
+    psoDesc.pRootSignature = rootSignature_.Get();
     // Shader設定
     psoDesc.InputLayout.pInputElementDescs = _modelInputLayout; // レイアウト配列
     psoDesc.InputLayout.NumElements = _countof(_modelInputLayout); // レイアウト配列数
@@ -1104,7 +1105,7 @@ bool InitD3D()
     // ** パイプラインステートの生成 START
     // psoDescを再利用して、塗りつぶし用のパイプラインステートを生成
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDescSolid = psoDesc;
-    result = device_->CreateGraphicsPipelineState(&psoDescSolid, IID_PPV_ARGS(&psoSolid_));
+    result = device_->CreateGraphicsPipelineState(&psoDescSolid, IID_PPV_ARGS(psoSolid_.ReleaseAndGetAddressOf()));
     if (FAILED(result)) {
         MessageBox(nullptr, L"塗りつぶしグラフィックパイプラインステートの生成に失敗",
             L"Graphics Pipeline State", MB_OK);
@@ -1118,7 +1119,7 @@ bool InitD3D()
     psoDescWireframe.VS.BytecodeLength = debugVertexShaderBlob->GetBufferSize();
     psoDescWireframe.PS.pShaderBytecode = debugPixelShaderBlob->GetBufferPointer();
     psoDescWireframe.PS.BytecodeLength = debugPixelShaderBlob->GetBufferSize();
-    result = device_->CreateGraphicsPipelineState(&psoDescWireframe, IID_PPV_ARGS(&psoWireframe_));
+    result = device_->CreateGraphicsPipelineState(&psoDescWireframe, IID_PPV_ARGS(psoWireframe_.ReleaseAndGetAddressOf()));
     if (FAILED(result)) {
         MessageBox(nullptr, L"ワイヤーフレームグラフィックパイプラインステートの生成に失敗",
             L"Graphics Pipeline State", MB_OK);
@@ -1134,7 +1135,7 @@ bool InitD3D()
     psoDescNormalLine.VS.BytecodeLength = debugVertexShaderBlob->GetBufferSize();
     psoDescNormalLine.PS.pShaderBytecode = debugPixelShaderBlob->GetBufferPointer();
     psoDescNormalLine.PS.BytecodeLength = debugPixelShaderBlob->GetBufferSize();
-    result = device_->CreateGraphicsPipelineState(&psoDescNormalLine, IID_PPV_ARGS(&psoNormals_));
+    result = device_->CreateGraphicsPipelineState(&psoDescNormalLine, IID_PPV_ARGS(psoNormals_.ReleaseAndGetAddressOf()));
     if (FAILED(result)) {
         MessageBox(nullptr, L"法線ベクトルのグラフィックパイプラインステートの生成に失敗",
             L"Graphics Pipeline State", MB_OK);
@@ -1167,9 +1168,9 @@ bool InitD3D()
 
     cmdList_->Close();
     // コマンドリストの実行
-    ID3D12CommandList* cmdlists[] = { cmdList_ };
+    ID3D12CommandList* cmdlists[] = { cmdList_.Get() };
     cmdQueue_->ExecuteCommandLists(_countof(cmdlists), cmdlists);
-    cmdQueue_->Signal(fence_, ++fenceValue_);
+    cmdQueue_->Signal(fence_.Get(), ++fenceValue_);
 
     // ** 定数バッファー（座標返還行列）の生成 START
     // 方法1: 定数バッファーの生成 ー＞ ディスクリプターヒープ ー＞ ビュー(CBV) ー＞ ルートパラメータ ー＞ ルートシグネチャー
@@ -1286,7 +1287,7 @@ void UpdatePipeline()
     }
 
     // コマンドリストをリセット
-    result = cmdList_->Reset(cmdAllocator_[frameIndex_], nullptr);
+    result = cmdList_->Reset(cmdAllocator_[frameIndex_].Get(), nullptr);
     if (FAILED(result))
     {
         MessageBox(nullptr, L"コマンドリストのリセットに失敗",
@@ -1298,7 +1299,7 @@ void UpdatePipeline()
     D3D12_RESOURCE_BARRIER _barrierDesc = {};
     _barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     _barrierDesc.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    _barrierDesc.Transition.pResource = backBuffers_[frameIndex_];
+    _barrierDesc.Transition.pResource = backBuffers_[frameIndex_].Get();
     _barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     _barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
     _barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
@@ -1310,14 +1311,14 @@ void UpdatePipeline()
     cmdList_->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 
     // レンダーターゲットのクリア
-    float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+    float clearColor[] = { 0.8f, 0.8f, 1.0f, 1.0f };
     cmdList_->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
     cmdList_->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
     // ルートシグネチャをセット
     // GPU側にディスクリプターテーブルを設定しているので、GetGPUDescriptorHandleForHeapStart()を使います
-    cmdList_->SetGraphicsRootSignature(rootSignature_);
-    cmdList_->SetDescriptorHeaps(1, &basicDescHeap_);
+    cmdList_->SetGraphicsRootSignature(rootSignature_.Get());
+    cmdList_->SetDescriptorHeaps(1, basicDescHeap_.GetAddressOf());
     D3D12_GPU_DESCRIPTOR_HANDLE basicDescHeapHandle = basicDescHeap_->GetGPUDescriptorHandleForHeapStart();
     cmdList_->SetGraphicsRootDescriptorTable(0, basicDescHeapHandle); // 定数バッファービュー
 
@@ -1331,7 +1332,7 @@ void UpdatePipeline()
     cmdList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     if (bSolidMode_)
     {
-        cmdList_->SetPipelineState(psoSolid_);
+        cmdList_->SetPipelineState(psoSolid_.Get());
         if(bShadeSmooth_)
         {
             cmdList_->IASetVertexBuffers(0, 1, &vertBufferView_);
@@ -1346,7 +1347,7 @@ void UpdatePipeline()
     }
     if (bWireframeMode_)
     {
-        cmdList_->SetPipelineState(psoWireframe_);
+        cmdList_->SetPipelineState(psoWireframe_.Get());
         cmdList_->IASetVertexBuffers(0, 1, &vertBufferView_);
         cmdList_->IASetIndexBuffer(&indexBufferView_);
         cmdList_->DrawIndexedInstanced(static_cast<UINT>(trianglesBTM_.size() * 3), 1, 0, 0, 0);
@@ -1354,7 +1355,7 @@ void UpdatePipeline()
     if(bDrawNormals_)
     {
         // 法線ベクトル描画
-        cmdList_->SetPipelineState(psoNormals_);
+        cmdList_->SetPipelineState(psoNormals_.Get());
         cmdList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
         if(bShadeSmooth_)
         {
@@ -1390,10 +1391,10 @@ void Render()
     UpdatePipeline();
 
     // コマンドを実行
-    ID3D12CommandList* ppCommandLists[] = { cmdList_ };
+    ID3D12CommandList* ppCommandLists[] = { cmdList_.Get() };
     cmdQueue_->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
-    hr = cmdQueue_->Signal(fence_, fenceValue_);
+    hr = cmdQueue_->Signal(fence_.Get(), fenceValue_);
     if (FAILED(hr))
     {
         MessageBox(nullptr, L"フェンスのシグナルに失敗",
@@ -1409,44 +1410,6 @@ void Render()
             L"Swap chain present", MB_OK);
         bRunning_ = false;
     }
-}
-
-void Cleanup()
-{
-    // GPUがコマンドを処理するのを待つ
-    for (unsigned int i = 0; i < frameBufferCount_; ++i)
-    {
-        frameBufferCount_ = i;
-        WaitForPreviousFrame();
-    }
-
-    // フルスクリーンを解除してからリソースを解放する
-    BOOL fs = false;
-    if (swapchain_->GetFullscreenState(&fs, NULL))
-        swapchain_->SetFullscreenState(false, NULL);
-
-    SAFE_RELEASE(device_);
-    SAFE_RELEASE(swapchain_);
-    SAFE_RELEASE(cmdQueue_);
-    SAFE_RELEASE(rtvHeaps_);
-    SAFE_RELEASE(cmdList_);
-    SAFE_RELEASE(fence_);
-
-    for (unsigned int i = 0; i < frameBufferCount_; ++i)
-    {
-        SAFE_RELEASE(backBuffers_[i]);
-        SAFE_RELEASE(cmdAllocator_[i]);
-    };
-
-    SAFE_RELEASE(vertUploadHeap_);
-    SAFE_RELEASE(indexUploadHeap_);
-    SAFE_RELEASE(normalUploadHeap_);
-    SAFE_RELEASE(rootSignature_);
-    SAFE_RELEASE(psoSolid_);
-    SAFE_RELEASE(psoWireframe_);
-    SAFE_RELEASE(psoNormals_);
-
-    SAFE_RELEASE(basicDescHeap_);
 }
 
 void WaitForPreviousFrame()

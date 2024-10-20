@@ -10,7 +10,6 @@
 
 #include <vector>
 #include <fstream>
-#include <stdexcept>
 
 #include <Windows.h>
 #include <d3dx12.h> // d3d12.hをインクルードする前にインクルードする必要がある
@@ -22,8 +21,6 @@
 // PIX
 #include <shlobj.h>
 #include <strsafe.h>
-
-#include <wincodec.h>
 
 // PIX support
 static std::wstring GetLatestWinPixGpuCapturerPath()
@@ -72,8 +69,6 @@ static std::wstring GetLatestWinPixGpuCapturerPath()
 // オブジェクトが存在する場合のみ、解放する
 #define SAFE_RELEASE(p) { if ( (p) ) { (p)->Release(); (p) = 0; } }
 
-using namespace DirectX;
-
 // 課題2の構造体
 #pragma pack(push, 1)
 struct Header
@@ -101,25 +96,25 @@ struct Triangle
 
 struct VertexData
 {
-	XMFLOAT3 position = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	XMFLOAT3 normal = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	DirectX::XMFLOAT3 position = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
+	DirectX::XMFLOAT3 normal = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 };
 
 Header headerBTM_; // Headerデータを格納する変数
 std::vector<Triangle> trianglesBTM_; // トライアングルデータを格納する変数
 std::vector<Task2Vertex> verticesBTM_; // 頂点データを格納する変数
-std::vector<XMFLOAT3> normalsBTM_; // XMFLOAT3型で法線ベクトルデータを格納する変数
+std::vector<DirectX::XMFLOAT3> normalsBTM_; // XMFLOAT3型で法線ベクトルデータを格納する変数
 
 struct WVPMatrices
 {
 	// ワールド行列
-	XMMATRIX transMat = XMMatrixIdentity();
-	XMMATRIX rotMat = XMMatrixIdentity();
-	XMMATRIX scaleMat = XMMatrixIdentity();
+	DirectX::XMMATRIX transMat = DirectX::XMMatrixIdentity();
+	DirectX::XMMATRIX rotMat = DirectX::XMMatrixIdentity();
+	DirectX::XMMATRIX scaleMat = DirectX::XMMatrixIdentity();
 
 	// ビュー・プロジェクション行列
-	XMMATRIX viewMat = XMMatrixIdentity();
-	XMMATRIX projMat = XMMatrixIdentity();
+	DirectX::XMMATRIX viewMat = DirectX::XMMatrixIdentity();
+	DirectX::XMMATRIX projMat = DirectX::XMMatrixIdentity();
 
 };
 
@@ -129,9 +124,9 @@ struct ConstantBuffer
 	//XMMATRIX wvpMat = XMMatrixIdentity(); // ワールド行列 * ビュー行列 * プロジェクション行列
 	WVPMatrices wvpMat = {}; // ワールド行列 * ビュー行列 * プロジェクション行列
 	// 16 bytes
-	XMVECTOR lightDirection = XMVectorZero(); // ライトの方向
-	XMVECTOR lightColor = XMVectorZero(); // ライトの色
-	XMVECTOR ambientColor = XMVectorZero(); // アンビエントライトの色
+	DirectX::XMVECTOR lightDirection = DirectX::XMVectorZero(); // ライトの方向
+	DirectX::XMVECTOR lightColor = DirectX::XMVectorZero(); // ライトの色
+	DirectX::XMVECTOR ambientColor = DirectX::XMVectorZero(); // アンビエントライトの色
 };
 
 // アライメントにそろえたサイズを返す
@@ -178,8 +173,6 @@ void UpdatePipeline(); // D3D12パイプラインの更新
 
 void Render(); // Command listに描画コマンドを積む
 
-void Cleanup(); // COMオブジェクトの解放
-
 void WaitForPreviousFrame(); // フェンスでCPUとGPUを同期させる
 
 UINT frameBufferCount_ = 2; // バックバッファの数
@@ -188,53 +181,53 @@ UINT frameIndex_ = 0; // 現在のバックバッファのインデックス
 UINT rtvDescriptorSize_ = 0; // レンダーターゲットビューのディスクリプタサイズ
 
 IDXGIFactory6* dxgiFactory_ = nullptr;
-ID3D12Device* device_ = nullptr;
-std::vector<ID3D12CommandAllocator*> cmdAllocator_(frameBufferCount_);
-ID3D12GraphicsCommandList* cmdList_ = nullptr;
-ID3D12CommandQueue* cmdQueue_ = nullptr;
-IDXGISwapChain4* swapchain_ = nullptr;
-ID3D12DescriptorHeap* rtvHeaps_ = nullptr;
-ID3D12Resource* depthBuffer_ = nullptr;
-ID3D12DescriptorHeap* dsvHeap_;
-std::vector<ID3D12Resource*> backBuffers_(frameBufferCount_);
-ID3D12Fence* fence_;
+Microsoft::WRL::ComPtr<ID3D12Device> device_;
+std::vector<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>> cmdAllocator_(frameBufferCount_);
+Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList_ = nullptr;
+Microsoft::WRL::ComPtr<ID3D12CommandQueue> cmdQueue_ = nullptr;
+Microsoft::WRL::ComPtr<IDXGISwapChain4> swapchain_ = nullptr;
+std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> backBuffers_(frameBufferCount_);
+Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeaps_ = nullptr;
+Microsoft::WRL::ComPtr<ID3D12Resource> depthBuffer_ = nullptr;
+Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvHeap_;
+Microsoft::WRL::ComPtr<ID3D12Fence> fence_;
 UINT64 fenceValue_; // フェンスがシグナルされるまでの値
 HANDLE fenceEvent_;
 
 // これらの情報をグローバルにする理由として
 // これらのデータはフレーム間で共有するため、InitD3Dの中でローカル関数にすると、次のフレームにデータが引き継がれないため
-ID3D12Resource* vertUploadHeap_ = nullptr;
+Microsoft::WRL::ComPtr<ID3D12Resource> vertUploadHeap_ = nullptr;
 VertexData* vertMapAddress_ = nullptr;
 D3D12_VERTEX_BUFFER_VIEW vertBufferView_ = {};
 
-ID3D12Resource* flatVertUploadHeap_ = nullptr;
+Microsoft::WRL::ComPtr<ID3D12Resource> flatVertUploadHeap_ = nullptr;
 VertexData* flatVertMapAddress_ = nullptr;
 D3D12_VERTEX_BUFFER_VIEW flatVertBufferView_;
 
-ID3D12Resource* indexUploadHeap_ = nullptr;
+Microsoft::WRL::ComPtr<ID3D12Resource> indexUploadHeap_ = nullptr;
 uint16_t* indexMapAddress_ = nullptr;
 D3D12_INDEX_BUFFER_VIEW indexBufferView_ = {};
 
-ID3D12Resource* normalUploadHeap_ = nullptr;
-XMFLOAT3* normalMapAddress_ = nullptr;
+Microsoft::WRL::ComPtr<ID3D12Resource> normalUploadHeap_ = nullptr;
+DirectX::XMFLOAT3* normalMapAddress_ = nullptr;
 D3D12_VERTEX_BUFFER_VIEW normalBufferView_ = {};
 
-ID3D12Resource* flatNormalUploadHeap_ = nullptr;
-XMFLOAT3* flatNormalMapAddress_ = nullptr;
+Microsoft::WRL::ComPtr<ID3D12Resource> flatNormalUploadHeap_ = nullptr;
+DirectX::XMFLOAT3* flatNormalMapAddress_ = nullptr;
 D3D12_VERTEX_BUFFER_VIEW flatNormalBufferView_ = {};
 
-ID3D12RootSignature* rootSignature_ = nullptr;
-ID3D12PipelineState* psoSolid_ = nullptr;
-ID3D12PipelineState* psoWireframe_ = nullptr;
-ID3D12PipelineState* psoNormals_ = nullptr;
+Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_ = nullptr;
+Microsoft::WRL::ComPtr<ID3D12PipelineState> psoSolid_ = nullptr;
+Microsoft::WRL::ComPtr<ID3D12PipelineState> psoWireframe_ = nullptr;
+Microsoft::WRL::ComPtr<ID3D12PipelineState> psoNormals_ = nullptr;
 D3D12_VIEWPORT viewport_ = {};
 D3D12_RECT sciRect_ = {};
 
-ID3D12DescriptorHeap* basicDescHeap_ = nullptr;
+Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> basicDescHeap_ = nullptr;
 ConstantBuffer* constBuffMapAddr_ = nullptr;
 
 // 課題2ファイルパース
-const std::string modelFilePath_ = "sample_min2.btm";
+const std::string modelFilePath_ = "models/sample_min.btm";
 
 // モデルのワールド行列の情報
 float objXOffset_ = 0.0f;
@@ -274,16 +267,16 @@ WVPMatrices wvpMatrices_ = {};
 float camX_ = 0.0f;
 float camY_ = 0.0f;
 float camZ_ = -10.0f;
-XMFLOAT3 camPos_ = { camX_, camY_, camZ_ }; // 視点
-XMFLOAT3 camTarg_ = { 0.0f, 0.0f, 0.0f }; // 注視点
-XMFLOAT3 camUp_ = { 0.0f, 1.0f, 0.0f }; // 上方向 (world up)
+DirectX::XMFLOAT3 camPos_ = { camX_, camY_, camZ_ }; // 視点
+DirectX::XMFLOAT3 camTarg_ = { 0.0f, 0.0f, 0.0f }; // 注視点
+DirectX::XMFLOAT3 camUp_ = { 0.0f, 1.0f, 0.0f }; // 上方向 (world up)
 bool bCameraMove_ = false;
 bool bCameraRotate_ = false;
 
 // ライトの情報
-XMFLOAT3 lightDirection_ = XMFLOAT3(0.0f, -1.0f, 1.0f);
-XMFLOAT3 lightColor_ = XMFLOAT3(1.0f, 1.0f, 1.0f);
-XMFLOAT3 ambientColor_ = XMFLOAT3(0.4f, 0.4f, 0.8f);
+DirectX::XMFLOAT3 lightDirection_ = DirectX::XMFLOAT3(0.0f, -1.0f, 1.0f);
+DirectX::XMFLOAT3 lightColor_ = DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f);
+DirectX::XMFLOAT3 ambientColor_ = DirectX::XMFLOAT3(0.6f, 0.6f, 1.0f);
 
 // インプット
 POINT prevMousePos_ = { 0, 0 };

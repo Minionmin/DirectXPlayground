@@ -25,21 +25,21 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="BasicVertexShader.hlsl">
+    <FxCompile Include="MyHLSL\BasicPixelShader.hlsl">
       <Filter>Resource Files</Filter>
     </FxCompile>
-    <FxCompile Include="BasicPixelShader.hlsl">
+    <FxCompile Include="MyHLSL\BasicVertexShader.hlsl">
       <Filter>Resource Files</Filter>
     </FxCompile>
-    <FxCompile Include="DebugVertexShader.hlsl">
+    <FxCompile Include="MyHLSL\DebugPixelShader.hlsl">
       <Filter>Resource Files</Filter>
     </FxCompile>
-    <FxCompile Include="DebugPixelShader.hlsl">
+    <FxCompile Include="MyHLSL\DebugVertexShader.hlsl">
       <Filter>Resource Files</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="BasicShaderStructure.hlsli">
+    <None Include="MyHLSL\BasicShaderStructure.hlsli">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
