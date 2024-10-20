@@ -139,42 +139,15 @@ size_t AlignmentedSize(size_t size, size_t alignment)
 	return size + alignment - size % alignment;
 }
 
-// ウインドウHANDLE
-HWND hwnd = NULL;
+//bool InitD3D(); // Direct3D12の初期化
 
-// ウインドウの幅と高さ
-unsigned int WINDOW_WIDTH = 1280;
-unsigned int WINDOW_HEIGHT = 720;
+//void Update(); // ゲームロジックの更新
 
-// フルスクリーンかどうか
-bool FullScreen = false;
+//void UpdatePipeline(); // D3D12パイプラインの更新
 
-// falseになるとプログラムが終了する
-bool bRunning_ = true;
+//void Render(); // Command listに描画コマンドを積む
 
-// ウインドウの初期化
-bool InitWindow(HINSTANCE hInstance,
-    int ShowWnd,
-    bool fullscreen);
-
-// プログラムのメインループ
-void Mainloop();
-
-// ウインドウメッセージの処理
-LRESULT CALLBACK WndProc(HWND hWnd,
-    UINT msg,
-    WPARAM wParam,
-    LPARAM lParam);
-
-bool InitD3D(); // Direct3D12の初期化
-
-void Update(); // ゲームロジックの更新
-
-void UpdatePipeline(); // D3D12パイプラインの更新
-
-void Render(); // Command listに描画コマンドを積む
-
-void WaitForPreviousFrame(); // フェンスでCPUとGPUを同期させる
+//void WaitForPreviousFrame(); // フェンスでCPUとGPUを同期させる
 
 UINT frameBufferCount_ = 2; // バックバッファの数
 UINT frameIndex_ = 0; // 現在のバックバッファのインデックス

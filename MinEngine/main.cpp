@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Application.h"
 
 using namespace DirectX;
 
@@ -60,224 +61,30 @@ bool LoadBTMFile(const std::string& filePath, Header& header, std::vector<Triang
 // プログラムのエントリーポイント
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
-    // ウインドウの初期化
-    if (!InitWindow(hInstance, nShowCmd, FullScreen))
-    {
-        MessageBox(0, L"ウインドウの初期化が失敗しました",
-            L"InitWindow", MB_OK);
-        return 1;
-    }
+    Application app;
 
-    if (!InitD3D())
-    {
-        MessageBox(0, L"Direct3D12の初期化に失敗しました",
-            L"InitD3D", MB_OK);
-        return 1;
-    }
+    if (!app.Initialize(hInstance, nShowCmd)) return -1;
+
+    app.Run();
+
+    //if (!InitD3D())
+    //{
+    //    MessageBox(0, L"Direct3D12の初期化に失敗しました",
+    //        L"InitD3D", MB_OK);
+    //    return 1;
+    //}
 
     // プログラムのメインループ
-    Mainloop();
+    //Mainloop();
 
-    WaitForPreviousFrame();
+    //WaitForPreviousFrame();
 
-    CloseHandle(fenceEvent_);
+    //CloseHandle(fenceEvent_);
 
     return 0;
 }
 
-bool InitWindow(HINSTANCE hInstance, int ShowWnd, bool fullscreen)
-{
-    if (fullscreen)
-    {
-        HMONITOR hmon = MonitorFromWindow(hwnd,
-            MONITOR_DEFAULTTONEAREST);
-        MONITORINFO mi = { sizeof(mi) };
-        GetMonitorInfo(hmon, &mi);
-
-        WINDOW_WIDTH = mi.rcMonitor.right - mi.rcMonitor.left;
-        WINDOW_HEIGHT = mi.rcMonitor.bottom - mi.rcMonitor.top;
-    }
-
-    WNDCLASSEX wc;
-
-    wc.cbSize = sizeof(WNDCLASSEX);
-    wc.style = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc = WndProc; // ウィンドウプロシージャの関数を登録する
-    wc.cbClsExtra = NULL;
-    wc.cbWndExtra = NULL;
-    wc.hInstance = hInstance;
-    wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 2);
-    wc.lpszMenuName = NULL;
-    wc.lpszClassName = L"MinWindow";
-    wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
-
-    if (!RegisterClassEx(&wc))
-    {
-        MessageBox(NULL, L"ウインドウクラスの登録に失敗しました",
-            L"wc", MB_OK | MB_ICONERROR);
-        return false;
-    }
-
-    hwnd = CreateWindowEx(NULL,
-        wc.lpszClassName,
-        L"Min Window",
-        WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT,
-        WINDOW_WIDTH, WINDOW_HEIGHT,
-        NULL,
-        NULL,
-        hInstance,
-        NULL);
-
-    if (!hwnd)
-    {
-        MessageBox(NULL, L"ウインドウの初期化に失敗しました",
-            L"hwnd", MB_OK | MB_ICONERROR);
-        return false;
-    }
-
-    if (fullscreen)
-    {
-        SetWindowLong(hwnd, GWL_STYLE, 0);
-    }
-
-    ShowWindow(hwnd, ShowWnd);
-    UpdateWindow(hwnd);
-
-    // ウィンドウクラスはもういらないので登録解除
-    UnregisterClass(wc.lpszClassName, wc.hInstance);
-    return true;
-}
-
-// ウインドウプロシージャ・WndClassからのメッセージを処理する
-LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-    switch (msg)
-    {
-    case WM_KEYDOWN:
-        switch (wParam)
-        {
-        case 'S': // 塗りつぶしモードの切り替え
-            bSolidMode_ = !bSolidMode_;
-            break;
-        case 'W': // ワイヤーフレームモードの切り替え
-            bWireframeMode_ = !bWireframeMode_;
-            break;
-		case 'M': // Flat/Smoothの切り替え
-			bShadeSmooth_ = !bShadeSmooth_;
-			break;
-        case 'N': // 法線ベクトルの描画の切り替え
-            bDrawNormals_ = !bDrawNormals_;
-            break;
-		case VK_ESCAPE: // ESCキーでプログラムを終了
-            if (MessageBox(0, L"プログラムを終了しますか?",
-                L"終了メッセージ", MB_YESNO | MB_ICONQUESTION) == IDYES)
-            {
-                bRunning_ = false;
-                DestroyWindow(hwnd);
-            }
-            break;
-        }
-        return 0; // メッセージを処理したと報告するために0を返す
-
-    case WM_RBUTTONDOWN : // マウス左クリックでカメラを回転可能状態にする
-	{
-        bCameraRotate_ = true;
-        SetCapture(hwnd); // マウスのキャプチャを設定
-        GetCursorPos(&prevMousePos_); // 現時点のマウス座標を取得
-        ScreenToClient(hwnd, &prevMousePos_); // クライアント領域の座標に変換
-        return 0;
-	}
-
-    case WM_LBUTTONDOWN: // マウスホイールクリックでカメラを移動可能状態にする
-	{
-        bCameraMove_ = true;
-        SetCapture(hwnd);
-        GetCursorPos(&prevMousePos_); // 現時点のマウス座標を取得
-        ScreenToClient(hwnd, &prevMousePos_); // クライアント領域の座標に変換
-        return 0;
-	}
-
-    case WM_MOUSEMOVE: // マウスの移動でx軸とy軸を移動する
-	{
-        GetCursorPos(&currMousePos_);
-        ScreenToClient(hwnd, &currMousePos_);
-        // マウスの移動距離を取得
-        const float deltaX = static_cast<float>(currMousePos_.x - prevMousePos_.x);
-        const float deltaY = static_cast<float>(currMousePos_.y - prevMousePos_.y);
-        if (bCameraMove_)
-        {
-            // x軸とy軸を移動（モデルをその逆方向に移動する）
-            objXOffset_ += deltaX * 0.01f; // 定数はマウスの感度
-            objYOffset_ -= deltaY * 0.01f; // -yにすることで、マウスの移動方向とモデルの移動方向を合わせる
-        }
-        else if (bCameraRotate_)
-        {
-            // x軸とy軸を回転（モデルをその逆方向に回転する）
-            objXRot_ -= deltaY * 0.5f;
-            objYRot_ -= deltaX * 0.5f;
-        }
-        // 現時点のマウス座標を保存
-        prevMousePos_ = currMousePos_;
-        return 0;
-	    }
-
-    case WM_RBUTTONUP:
-	{
-        bCameraRotate_ = false;
-        ReleaseCapture(); // マウスのキャプチャを解放
-        return 0;
-	}
-
-    case WM_LBUTTONUP:
-	    {
-            bCameraMove_ = false;
-            ReleaseCapture();
-            return 0;
-	    }
-
-    case WM_MOUSEWHEEL: // マウスホイールでカメラのz軸を移動する
-        {
-            const float zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-            camZ_ += 0.01f * zDelta; // 定数はカメラの感度
-            return 0;
-        }
-    
-    case WM_DESTROY:
-	    {
-            bRunning_ = false;
-            PostQuitMessage(0);
-            return 0; // メッセージを処理したと報告するために0を返す   
-	    }
-    }
-    return DefWindowProc(hwnd, msg, wParam, lParam);
-}
-
-void Mainloop() {
-    MSG msg;
-    ZeroMemory(&msg, sizeof(MSG));
-
-    while (bRunning_)
-    {
-        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-        {
-            if (msg.message == WM_QUIT)
-                break;
-
-            TranslateMessage(&msg);
-            DispatchMessage(&msg); // ウィンドウプロシージャにメッセージを送る
-        }
-        else {
-            // ゲームロジック
-            Update();
-            Render();
-        }
-    }
-}
-
-void AverageNormals(const std::vector<VertexData>& verticesData, const std::vector<uint16_t>& indices, const std::vector<XMFLOAT3>& normals, std::vector<XMFLOAT3>& accumulatedNormals)
+/*void AverageNormals(const std::vector<VertexData>& verticesData, const std::vector<uint16_t>& indices, const std::vector<XMFLOAT3>& normals, std::vector<XMFLOAT3>& accumulatedNormals)
 {
 	std::vector<int> normalCount(verticesData.size(), 0); // 指定した頂点に対する法線の数をカウントする配列
 
@@ -313,9 +120,9 @@ void AverageNormals(const std::vector<VertexData>& verticesData, const std::vect
 			XMStoreFloat3(&accumulatedNormals[i], normalVec);
 		}
 	}
-}
+}*/
 
-bool InitD3D()
+/*bool InitD3D()
 {
     // Pix GPU Capturer
     // Check to see if a copy of WinPixGpuCapturer.dll has already been injected into the application.
@@ -1437,4 +1244,4 @@ void WaitForPreviousFrame()
 
     // 次のフレームのためにフェンスの値を増やす
     fenceValue_++;
-}
+}*/
