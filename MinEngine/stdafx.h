@@ -12,11 +12,12 @@
 #include <fstream>
 
 #include <Windows.h>
-#include <d3dx12.h> // d3d12.hをインクルードする前にインクルードする必要がある
-#include <d3d12.h>
-#include <d3dcompiler.h>
-#include <dxgi1_6.h>
+#include <d3dx12.h> // ヘルパー関数・構造体（d3d12.hをインクルードする前にインクルードする必要がある）
+#include <d3d12.h> // DirectX12のコアAPI
+#include <d3dcompiler.h> // シェーダーコンパイラ（ランタイムでシェーダをコンパイルすれば必須）
+#include <dxgi1_6.h> // DXGI（DirectX Graphics Infrastructure）のインターフェース（アダプターとSwap chain用）
 #include <DirectXMath.h>
+#include <wrl.h> // ComPtr
 
 // PIX
 #include <shlobj.h>

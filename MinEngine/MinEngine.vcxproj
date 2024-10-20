@@ -71,20 +71,20 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\Program Files %28x86%29\Windows Kits\10\Include\10.0.22621.0\shared;C:\Program Files %28x86%29\Windows Kits\10\Include\10.0.22621.0\um;F:\GameEngineWorkspace\MinEngine\MinEngine\wsl;F:\GameEngineWorkspace\MinEngine\MinEngine\dxguids;F:\GameEngineWorkspace\MinEngine\MinEngine\directx;$(IncludePath)</IncludePath>
-    <LibraryPath>F:\GameEngineWorkspace\MinEngine\MinEngine\wsl;F:\GameEngineWorkspace\MinEngine\MinEngine\dxguids;F:\GameEngineWorkspace\MinEngine\MinEngine\directx;C:\Program Files %28x86%29\Windows Kits\10\Lib\10.0.22621.0\um\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Program Files %28x86%29\Windows Kits\10\Include\10.0.22621.0\shared;C:\Program Files %28x86%29\Windows Kits\10\Include\10.0.22621.0\um;F:\GameEngineWorkspace\MinEngine\MinEngine\directx;$(IncludePath)</IncludePath>
+    <LibraryPath>F:\GameEngineWorkspace\MinEngine\MinEngine\directx;C:\Program Files %28x86%29\Windows Kits\10\Lib\10.0.22621.0\um\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>C:\Program Files %28x86%29\Windows Kits\10\Include\10.0.22621.0\shared;C:\Program Files %28x86%29\Windows Kits\10\Include\10.0.22621.0\um;F:\GameEngineWorkspace\MinEngine\MinEngine\wsl;F:\GameEngineWorkspace\MinEngine\MinEngine\dxguids;F:\GameEngineWorkspace\MinEngine\MinEngine\directx;$(IncludePath)</IncludePath>
-    <LibraryPath>F:\GameEngineWorkspace\MinEngine\MinEngine\wsl;F:\GameEngineWorkspace\MinEngine\MinEngine\dxguids;F:\GameEngineWorkspace\MinEngine\MinEngine\directx;C:\Program Files %28x86%29\Windows Kits\10\Lib\10.0.22621.0\um\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Program Files %28x86%29\Windows Kits\10\Include\10.0.22621.0\shared;C:\Program Files %28x86%29\Windows Kits\10\Include\10.0.22621.0\um;F:\GameEngineWorkspace\MinEngine\MinEngine\directx;$(IncludePath)</IncludePath>
+    <LibraryPath>F:\GameEngineWorkspace\MinEngine\MinEngine\directx;C:\Program Files %28x86%29\Windows Kits\10\Lib\10.0.22621.0\um\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Program Files %28x86%29\Windows Kits\10\Include\10.0.22621.0\shared;C:\Program Files %28x86%29\Windows Kits\10\Include\10.0.22621.0\um;F:\GameEngineWorkspace\MinEngine\MinEngine\wsl;F:\GameEngineWorkspace\MinEngine\MinEngine\dxguids;F:\GameEngineWorkspace\MinEngine\MinEngine\directx;$(IncludePath)</IncludePath>
-    <LibraryPath>F:\GameEngineWorkspace\MinEngine\MinEngine\wsl;F:\GameEngineWorkspace\MinEngine\MinEngine\dxguids;F:\GameEngineWorkspace\MinEngine\MinEngine\directx;C:\Program Files %28x86%29\Windows Kits\10\Lib\10.0.22621.0\um\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Program Files %28x86%29\Windows Kits\10\Include\10.0.22621.0\shared;C:\Program Files %28x86%29\Windows Kits\10\Include\10.0.22621.0\um;F:\GameEngineWorkspace\MinEngine\MinEngine\directx;$(IncludePath)</IncludePath>
+    <LibraryPath>F:\GameEngineWorkspace\MinEngine\MinEngine\directx;C:\Program Files %28x86%29\Windows Kits\10\Lib\10.0.22621.0\um\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\Program Files %28x86%29\Windows Kits\10\Include\10.0.22621.0\shared;C:\Program Files %28x86%29\Windows Kits\10\Include\10.0.22621.0\um;F:\GameEngineWorkspace\MinEngine\MinEngine\wsl;F:\GameEngineWorkspace\MinEngine\MinEngine\dxguids;F:\GameEngineWorkspace\MinEngine\MinEngine\directx;$(IncludePath)</IncludePath>
-    <LibraryPath>F:\GameEngineWorkspace\MinEngine\MinEngine\wsl;F:\GameEngineWorkspace\MinEngine\MinEngine\dxguids;F:\GameEngineWorkspace\MinEngine\MinEngine\directx;C:\Program Files %28x86%29\Windows Kits\10\Lib\10.0.22621.0\um\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Program Files %28x86%29\Windows Kits\10\Include\10.0.22621.0\shared;C:\Program Files %28x86%29\Windows Kits\10\Include\10.0.22621.0\um;F:\GameEngineWorkspace\MinEngine\MinEngine\directx;$(IncludePath)</IncludePath>
+    <LibraryPath>F:\GameEngineWorkspace\MinEngine\MinEngine\directx;C:\Program Files %28x86%29\Windows Kits\10\Lib\10.0.22621.0\um\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -92,7 +92,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Program Files\Autodesk\FBX\FBX SDK\2020.3.7\include;F:\GameEngineWorkspace\DirectXTex-main\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\GameEngineWorkspace\DirectXTex-main\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -109,7 +109,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Program Files\Autodesk\FBX\FBX SDK\2020.3.7\include;F:\GameEngineWorkspace\DirectXTex-main\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\GameEngineWorkspace\DirectXTex-main\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -126,7 +126,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Program Files\Autodesk\FBX\FBX SDK\2020.3.7\include;F:\GameEngineWorkspace\DirectXTex-main\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\GameEngineWorkspace\DirectXTex-main\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -143,7 +143,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Program Files\Autodesk\FBX\FBX SDK\2020.3.7\include;F:\GameEngineWorkspace\DirectXTex-main\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\GameEngineWorkspace\DirectXTex-main\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
