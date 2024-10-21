@@ -106,6 +106,7 @@ std::vector<Triangle> trianglesBTM_; // トライアングルデータを格納する変数
 std::vector<Task2Vertex> verticesBTM_; // 頂点データを格納する変数
 std::vector<DirectX::XMFLOAT3> normalsBTM_; // XMFLOAT3型で法線ベクトルデータを格納する変数
 
+/*
 struct WVPMatrices
 {
 	// ワールド行列
@@ -118,8 +119,9 @@ struct WVPMatrices
 	DirectX::XMMATRIX projMat = DirectX::XMMatrixIdentity();
 
 };
+*/
 
-struct ConstantBuffer
+/*struct ConstantBuffer
 {
 	// 64 bytes
 	//XMMATRIX wvpMat = XMMatrixIdentity(); // ワールド行列 * ビュー行列 * プロジェクション行列
@@ -129,7 +131,7 @@ struct ConstantBuffer
 	DirectX::XMVECTOR lightColor = DirectX::XMVectorZero(); // ライトの色
 	DirectX::XMVECTOR ambientColor = DirectX::XMVectorZero(); // アンビエントライトの色
 };
-
+*/
 // アライメントにそろえたサイズを返す
 // @param size 元のサイズ
 // @param alignment アライメントサイズ
@@ -149,6 +151,7 @@ size_t AlignmentedSize(size_t size, size_t alignment)
 
 //void WaitForPreviousFrame(); // フェンスでCPUとGPUを同期させる
 
+/*
 UINT frameBufferCount_ = 2; // バックバッファの数
 UINT frameIndex_ = 0; // 現在のバックバッファのインデックス
 
@@ -260,3 +263,4 @@ bool bSolidMode_ = true;
 bool bWireframeMode_ = false;
 bool bDrawNormals_ = false;
 bool bShadeSmooth_ = true;
+*/

@@ -82,7 +82,7 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
     // あいにく、メッセージを受け取る度にWindowクラスのインスタンスを取得する必要があり、毎回キャストする必要がある
     //Window* pWindow = reinterpret_cast<Window*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
-    Window* pWindow = pInstance_;
+    Window* pWindow = GetInstance();
 
     switch (msg)
     {
@@ -90,16 +90,17 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
         switch (wParam)
         {
         case 'S': // 塗りつぶしモードの切り替え
-            pWindow->bSolidMode_ = !pWindow->bSolidMode_;
+            //pWindow->bSolidMode_ = !pWindow->bSolidMode_;
+            pWindow->keyCallback_(wParam);
             break;
         case 'W': // ワイヤーフレームモードの切り替え
-            pWindow->bWireframeMode_ = !pWindow->bWireframeMode_;
+            //pWindow->bWireframeMode_ = !pWindow->bWireframeMode_;
             break;
         case 'M': // Flat/Smoothの切り替え
-            pWindow->bShadeSmooth_ = !pWindow->bShadeSmooth_;
+            //pWindow->bShadeSmooth_ = !pWindow->bShadeSmooth_;
             break;
         case 'N': // 法線ベクトルの描画の切り替え
-            pWindow->bDrawNormals_ = !pWindow->bDrawNormals_;
+            //pWindow->bDrawNormals_ = !pWindow->bDrawNormals_;
             break;
         case VK_ESCAPE: // ESCキーでプログラムを終了
             if (MessageBox(0, L"プログラムを終了しますか?",
@@ -114,7 +115,9 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
     case WM_RBUTTONDOWN: // マウス左クリックでカメラを回転可能状態にする
     {
-        pWindow->bCameraRotate_ = true;
+        //pWindow->bCameraRotate_ = true;
+        // レンダラーのbCameraRotate_をtrueにする
+        pWindow->mouseCallback_(WM_RBUTTONDOWN);
         SetCapture(hwnd); // マウスのキャプチャを設定
         GetCursorPos(&pWindow->prevMousePos_); // 現時点のマウス座標を取得
         ScreenToClient(hwnd, &pWindow->prevMousePos_); // クライアント領域の座標に変換
@@ -123,7 +126,7 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
     case WM_LBUTTONDOWN: // マウスホイールクリックでカメラを移動可能状態にする
     {
-        pWindow->bCameraMove_ = true;
+        //pWindow->bCameraMove_ = true;
         SetCapture(hwnd);
         GetCursorPos(&pWindow->prevMousePos_); // 現時点のマウス座標を取得
         ScreenToClient(hwnd, &pWindow->prevMousePos_); // クライアント領域の座標に変換
@@ -132,7 +135,7 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
     case WM_MOUSEMOVE: // マウスの移動でx軸とy軸を移動する
     {
-        GetCursorPos(&pWindow->currMousePos_);
+        /*GetCursorPos(&pWindow->currMousePos_);
         ScreenToClient(hwnd, &pWindow->currMousePos_);
         // マウスの移動距離を取得
         const float deltaX = static_cast<float>(pWindow->currMousePos_.x - pWindow->prevMousePos_.x);
@@ -150,20 +153,20 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
             pWindow->objYRot_ -= deltaX * 0.5f;
         }
         // 現時点のマウス座標を保存
-        pWindow->prevMousePos_ = pWindow->currMousePos_;
+        pWindow->prevMousePos_ = pWindow->currMousePos_;*/
         return 0;
     }
 
     case WM_RBUTTONUP:
     {
-        pWindow->bCameraRotate_ = false;
+        //pWindow->bCameraRotate_ = false;
         ReleaseCapture(); // マウスのキャプチャを解放
         return 0;
     }
 
     case WM_LBUTTONUP:
     {
-        pWindow->bCameraMove_ = false;
+        //pWindow->bCameraMove_ = false;
         ReleaseCapture();
         return 0;
     }
@@ -171,7 +174,7 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
     case WM_MOUSEWHEEL: // マウスホイールでカメラのz軸を移動する
     {
         const float zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-        pWindow->camZ_ += 0.01f * zDelta; // 定数はカメラの感度
+        //pWindow->camZ_ += 0.01f * zDelta; // 定数はカメラの感度
         return 0;
     }
 
@@ -204,7 +207,22 @@ bool Window::RegisterWindowClass(WNDCLASSEXW& wc)
     return RegisterClassEx(&wc);
 }
 
+void Window::SetKeyCallback(std::function<void(WPARAM)> callback)
+{
+    keyCallback_ = callback;
+}
+
+void Window::SetMouseCallback(std::function<void(UINT)> mouseCallback)
+{
+	mouseCallback_ = mouseCallback;
+}
+
 HWND Window::GetHWND() const
 {
     return hwnd_;
+}
+
+Window* Window::GetInstance()
+{
+	return pInstance_;
 }
